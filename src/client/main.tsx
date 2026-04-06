@@ -7,13 +7,14 @@ import {
   createRoute,
 } from "@tanstack/react-router";
 import { App } from "./App";
+import { Home } from "./pages/Home";
 
 const rootRoute = createRootRoute({ component: App });
 
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
-  component: () => null,
+  component: Home,
 });
 
 const routeTree = rootRoute.addChildren([indexRoute]);
