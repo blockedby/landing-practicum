@@ -1,1 +1,3 @@
-# Landing\n\nЗдесь будет Vibe Landing приложение.
+# Landing
+
+Здесь будет Vibe Landing приложение.
