@@ -1,5 +1,7 @@
 # FreshBox Landing
 
+**https://baza.peacedata.company**
+
 Лендинг сервиса доставки здоровой еды. Fullstack-приложение в Docker с Telegram-ботом для управления заявками.
 
 ## Стек
