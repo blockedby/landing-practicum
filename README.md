@@ -2,6 +2,8 @@
 
 **https://baza.peacedata.company**
 
+Выполнено в рамках курса [Vibe Landing Practicum](https://peacedata.company/blog/vibe-landing)
+
 Лендинг сервиса доставки здоровой еды. Fullstack-приложение в Docker с Telegram-ботом для управления заявками.
 
 ## Стек
