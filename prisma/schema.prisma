@@ -5,3 +5,55 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model Visitor {
+  id            String     @id @default(cuid())
+  fingerprint   String     @unique
+  ip            String
+  userAgent     String
+  firstVisitAt  DateTime   @default(now())
+
+  leads         Lead[]
+  events        EventLog[]
+
+  @@map("visitors")
+}
+
+enum LeadStatus {
+  new
+  contacted
+  rejected
+}
+
+model Lead {
+  id            String     @id @default(cuid())
+  name          String     @db.VarChar(100)
+  contact       String     @unique @db.VarChar(255)
+  consent       Boolean
+  status        LeadStatus @default(new)
+  createdAt     DateTime   @default(now())
+
+  visitorId     String?
+  visitor       Visitor?   @relation(fields: [visitorId], references: [id])
+
+  events        EventLog[]
+
+  @@map("leads")
+}
+
+model EventLog {
+  id            String     @id @default(cuid())
+  type          String
+  source        String     @default("website")
+  idempotencyKey String?   @unique
+  data          Json?
+  createdAt     DateTime   @default(now())
+
+  visitorId     String?
+  visitor       Visitor?   @relation(fields: [visitorId], references: [id])
+
+  leadId        String?
+  lead          Lead?      @relation(fields: [leadId], references: [id])
+
+  @@map("event_log")
+}

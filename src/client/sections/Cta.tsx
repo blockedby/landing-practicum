@@ -1,4 +1,5 @@
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useState, useEffect, useRef } from "react";
+import { getFingerprint, trackEvent } from "../tracking";
 
 function formatPhone(raw: string): string {
   const digits = raw.replace(/\D/g, "").slice(0, 11);
@@ -27,6 +28,28 @@ export function Cta() {
   const [agreed, setAgreed] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [serverError, setServerError] = useState("");
+  const sectionRef = useRef<HTMLElement>(null);
+  const scrollTracked = useRef(false);
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !scrollTracked.current) {
+          scrollTracked.current = true;
+          trackEvent("cta_click", { action: "scroll_to_form" });
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.5 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   function validate(): Errors {
     const e: Errors = {};
@@ -49,13 +72,40 @@ export function Cta() {
     return e;
   }
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setServerError("");
+
     const errs = validate();
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
 
-    setSubmitted(true);
+    setLoading(true);
+    try {
+      const res = await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          contact: phone,
+          consent: agreed,
+          fingerprint: getFingerprint(),
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setServerError(data.error || "Что-то пошло не так");
+        return;
+      }
+
+      setSubmitted(true);
+    } catch {
+      setServerError("Не удалось отправить заявку. Проверьте соединение.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (submitted) {
@@ -74,13 +124,16 @@ export function Cta() {
   }
 
   return (
-    <section className="cta">
+    <section className="cta" ref={sectionRef}>
       <div className="container">
         <div className="cta__inner">
           <h2 className="section-title">Попробуйте первый заказ бесплатно</h2>
           <p className="section-subtitle">
             Оставьте заявку — перезвоним за 5 минут и подберём меню
           </p>
+          {serverError && (
+            <div className="server-error">{serverError}</div>
+          )}
           <form className="cta__form" onSubmit={handleSubmit} noValidate>
             <div>
               <input
@@ -124,8 +177,8 @@ export function Cta() {
               </label>
               {errors.agreed && <span className="field-error">{errors.agreed}</span>}
             </div>
-            <button className="btn" type="submit">
-              Оставить заявку
+            <button className="btn" type="submit" disabled={loading}>
+              {loading ? "Отправка..." : "Оставить заявку"}
             </button>
           </form>
         </div>
