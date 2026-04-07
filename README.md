@@ -9,51 +9,108 @@
 - **БД**: PostgreSQL 17, Prisma 7
 - **Инфраструктура**: Docker Compose, Nginx, bash-скрипты деплоя
 
-## Локальный запуск
+---
+
+## Как запустить локально
+
+### Вариант 1: Docker (рекомендуемый)
 
 ```bash
-# 1. Склонировать и настроить переменные
-git clone <repo-url> && cd landing
-cp .env.example .env        # заполнить пароли, токены
+git clone https://github.com/blockedby/landing-practicum.git
+cd landing-practicum
 
-# 2. Поднять контейнеры
+# Настроить переменные окружения
+cp .env.example .env
+# Отредактировать .env — заполнить пароли, токены бота и т.д.
+
+# Поднять все 3 сервиса (nginx + app + postgres)
 docker compose up -d --build
 
-# 3. Применить миграции
+# Применить миграции базы данных
 docker compose exec app npx prisma migrate deploy
 
-# 4. Открыть сайт
-open http://localhost        # или порт из NGINX_PORT
+# Готово — открываем
+open http://localhost
 ```
 
-Для локальной разработки без Docker:
+### Вариант 2: без Docker (для разработки)
+
+Нужна локальная PostgreSQL. Прописать `DATABASE_URL` в `.env` с `localhost`.
 
 ```bash
 npm install
 npx prisma generate
-npx prisma migrate dev       # нужна локальная PostgreSQL
-npm run dev                  # сервер с hot-reload на :3000
+npx prisma migrate dev    # создаст таблицы в локальной БД
+npm run dev               # Express + Vite, hot-reload на :3000
 ```
 
-## Миграции и seed
+---
+
+## Как прогнать миграции
 
 ```bash
-# Создать новую миграцию после изменений в schema.prisma
-npx prisma migrate dev --name <описание>
+# Локально — создать новую миграцию после изменений в schema.prisma
+npx prisma migrate dev --name add_user_email
 
-# Применить миграции (production)
+# Локально — применить существующие миграции (без создания новых)
 npx prisma migrate deploy
 
-# Применить миграции на удалённом сервере
+# На удалённом сервере — через SSH в Docker-контейнер
 ./scripts/migrate.sh <IP> <SSH_KEY> [USERNAME]
 
-# Посмотреть данные в БД
+# Посмотреть данные в браузере
 npx prisma studio
 ```
 
-## Демо-проверка
+Текущие миграции:
+- `20260406233653_init_tables` — Visitor, Lead, EventLog
+- `20260407220657_add_lead_status` — enum LeadStatus (new/contacted/rejected)
 
-Запустить `./scripts/demo.sh` — скрипт за 2 минуты проверяет все ключевые фичи: health, создание заявки, дубликаты, трекинг событий, webhook с секретом и без.
+---
+
+## Демо-скрипт: проверить всё за 2 минуты
+
+```bash
+./scripts/demo.sh http://localhost
+```
+
+Скрипт автоматически проверяет 12 тестов:
+
+```
+═══════════════════════════════════════════════
+ Демо-проверка: http://localhost
+═══════════════════════════════════════════════
+
+▸ [1/6] Health check...
+  ✓ БД подключена
+
+▸ [2/6] Лендинг отдаёт HTML...
+  ✓ HTML содержит root
+  ✓ Подключены стили
+
+▸ [3/6] Создание заявки...
+  ✓ Заявка создана (201)
+  ✓ Ответ содержит id
+
+▸ [4/6] Проверка дубликата...
+  ✓ Дубликат отклонён (409)
+
+▸ [5/6] Трекинг событий...
+  ✓ landing_view записан
+  ✓ cta_click записан
+  ✓ Неизвестное событие отклонено (400)
+
+▸ [6/6] Webhook...
+  ✓ Без секрета — 401
+  ✓ С секретом — 201
+  ✓ Дубль — duplicate
+
+═══════════════════════════════════════════════
+ Все проверки пройдены: 12/12
+═══════════════════════════════════════════════
+```
+
+---
 
 ## Структура
 
