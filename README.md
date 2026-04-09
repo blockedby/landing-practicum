@@ -1,7 +1,7 @@
 # FreshBox Landing
 
 **https://baza.peacedata.company**
-VPS нужна, перенёс на http://baza.peacedata.company:8080 , но в курсе есть настройки на 80/443 порты
+VPS нужна, перенёс на  http://45.12.74.211:8080 , но в курсе есть настройки на 80/443 порты, url
 
 Выполнено в рамках курса [Vibe Landing Practicum](https://peacedata.company/blog/vibe-landing)
 
